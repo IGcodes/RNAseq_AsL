@@ -117,7 +117,7 @@ Update paths at the top of R/Diff_Exp_UCI.R, then run:
 source("R/Diff_Exp_UCI.R")
 
 
-# What it does (high level):
+# What it does:
 
 Input: UCI_sample_info.csv (columns: sampleName, stage, quant_dir), builds file list of quant.sf.
 
