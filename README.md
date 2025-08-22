@@ -1,4 +1,4 @@
-# RNA‑seq differential expression pipeline for Anopheles stephensi larvae
+# RNA‑seq differential expression pipeline for <i> Anopheles stephensi </i> larvae
 
 ## A small, end‑to‑end toolkit to quantify transcripts with Salmon, build a custom org.*.eg.db from a GAF file, and run differential expression plus GO/KEGG enrichment in R.
 
