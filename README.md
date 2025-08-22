@@ -46,9 +46,12 @@ AnnotationForge, AnnotationDbi, biomaRt, GO.db
 Create a project directory with subfolders like:
 
 RNAseq_EthiopiaNUCI/
-  Ref_transcriptome/
-  Fastq_files/UCI_lab/
-  quant_files/UCI_quants/
+
+  RNAseq_EthiopiaNUCI/Ref_transcriptome/
+  
+  RNAseq_EthiopiaNUCI/Fastq_files/UCI_lab/
+  
+  RNAseq_EthiopiaNUCI/quant_files/UCI_quants/
 
 
 ## Prepare:
