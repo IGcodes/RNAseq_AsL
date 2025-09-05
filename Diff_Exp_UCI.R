@@ -24,13 +24,15 @@ library(GO.db)
 
 # 1. Read in sample metadata
 # Expect a table with columns: sampleName, stage, quant_dir
-sampleTable <- read_csv("./quant_files/UCI_sample_info.csv")
+sampleTable <- read_csv("./quant_files/All_sample_info.csv")
 # e.g. sample_info.csv:
 # sampleName,stage,quant_dir
 # S1,L1,/path/to/S1
 # S2,L1,/path/to/S2
 # ...
-sampleTable$stage <- factor(sampleTable$stage, levels=c("IS1","IS2","IS3","IS4"))
+sampleTable$stage <- factor(sampleTable$stage, levels=c("IS1","IS2","IS3","IS4", "DK"))
+sampleTable$Collection <- factor(sampleTable$Collection, levels = c("Lab", "Wild"))
+sampleTable$Site <- factor(sampleTable$Site, levels = c("UCI", "Adama", "Erer", "Jijiga") )
 rownames(sampleTable) <- sampleTable$sampleName
 
 # 2. Build vector of Salmon quant.sf files
@@ -57,7 +59,7 @@ txi <- tximport(files,
 # This is for the purpose of using each larval stage as reference factor
 dds <- DESeqDataSetFromTximport(txi,
                                    colData = sampleTable,
-                                   design = ~ stage)
+                                   design = ~ Site)
 ddsIS1 <- DESeqDataSetFromTximport(txi,
                                 colData = sampleTable,
                                 design = ~ stage)
@@ -70,6 +72,21 @@ ddsIS3 <- DESeqDataSetFromTximport(txi,
 ddsIS4 <- DESeqDataSetFromTximport(txi,
                                    colData = sampleTable,
                                    design = ~ stage)
+ddsSiteJijiga <- DESeqDataSetFromTximport(txi,
+                                   colData = sampleTable,
+                                   design = ~ Site)
+ddsSiteErer <- DESeqDataSetFromTximport(txi,
+                                          colData = sampleTable,
+                                          design = ~ Site)
+ddsSiteAdama <- DESeqDataSetFromTximport(txi,
+                                          colData = sampleTable,
+                                          design = ~ Site)
+ddsSiteUCI <- DESeqDataSetFromTximport(txi,
+                                         colData = sampleTable,
+                                         design = ~ Site)
+ddsCollection <- DESeqDataSetFromTximport(txi,
+                                    colData = sampleTable,
+                                    design = ~ Collection)
 
 # 5. Prefilter low-count genes (optional but recommended)
 # Here I'm using the same Keep input to filter the genes from dds object I created only for this purpose
@@ -79,24 +96,44 @@ ddsIS1 <- ddsIS1[keep,]
 ddsIS2 <- ddsIS2[keep,]
 ddsIS3 <- ddsIS3[keep,]
 ddsIS4 <- ddsIS4[keep,]
+ddsSiteJijiga <- ddsSiteJijiga[keep,]
+ddsSiteErer <- ddsSiteErer[keep,]
+ddsSiteAdama <- ddsSiteAdama[keep,]
+ddsSiteUCI <- ddsSiteUCI[keep,]
+ddsCollection <- ddsCollection[keep,]
 
 # 5.5 Setting the reference level for each larval stage separately
 ddsIS1$stage <- relevel(ddsIS1$stage, ref = "IS1")
 ddsIS2$stage <- relevel(ddsIS1$stage, ref = "IS2")
 ddsIS3$stage <- relevel(ddsIS1$stage, ref = "IS3")
 ddsIS4$stage <- relevel(ddsIS1$stage, ref = "IS4")
+ddsSiteJijiga$Site <- relevel(ddsSiteJijiga$Site, ref = "Jijiga")
+ddsSiteErer$Site <- relevel(ddsSiteErer$Site, ref = "Erer")
+ddsSiteAdama$Site <- relevel(ddsSiteAdama$Site, ref = "Adama")
+ddsSiteUCI$Site <- relevel(ddsSiteAdama$Site, ref = "UCI")
+ddsCollection$Collection <- relevel(ddsCollection$Collection, ref = "Lab")
 
 # 6. Run the DESeq pipeline
 ddsIS1 <- DESeq(ddsIS1)
 ddsIS2 <- DESeq(ddsIS2)
 ddsIS3 <- DESeq(ddsIS3)
 ddsIS4 <- DESeq(ddsIS4)
+ddsSiteJijiga <- DESeq(ddsSiteJijiga)
+ddsSiteErer <- DESeq(ddsSiteErer)
+ddsSiteAdama <- DESeq(ddsSiteAdama)
+ddsSiteUCI <- DESeq(ddsSiteUCI)
+ddsCollection <- DESeq(ddsCollection)
 
 # 7. Examine results names (coefficients)
 resultsNames(ddsIS1)
 resultsNames(ddsIS2)
 resultsNames(ddsIS3)
 resultsNames(ddsIS4)
+resultsNames(ddsSiteJijiga)
+resultsNames(ddsSiteErer)
+resultsNames(ddsSiteAdama)
+resultsNames(ddsSiteUCI)
+resultsNames(ddsCollection)
 # e.g. "Intercept", "stage_L2_vs_L1", "stage_L3_vs_L1", "stage_L4_vs_L1"
 
 # 8. Extract results of important comparisons. It is important to pick the correct model for each comparison
@@ -106,6 +143,16 @@ resultsNames(ddsIS4)
 res_IS2_vs_IS1 <- results(ddsIS1, contrast=c("stage","IS2","IS1"))
 res_IS3_vs_IS2 <- results(ddsIS2, contrast=c("stage","IS3","IS2"))
 res_IS4_vs_IS3 <- results(ddsIS3, contrast=c("stage","IS4","IS3"))
+res_Erer_vs_Jijiga <- results(ddsSiteJijiga, contrast = c("Site", "Erer", "Jijiga"))
+res_Adama_vs_Jijiga <- results(ddsSiteJijiga, contrast = c("Site", "Adama", "Jijiga"))
+res_Jijiga_vs_Erer <- results(ddsSiteErer, contrast = c("Site", "Jijiga", "Erer"))
+res_Adama_vs_Erer <- results(ddsSiteErer, contrast = c("Site", "Adama", "Erer"))
+res_Jijiga_vs_Adama <- results(ddsSiteAdama, contrast = c("Site", "Jijiga", "Adama"))
+res_Erer_vs_Adama <- results(ddsSiteAdama, contrast = c("Site", "Erer", "Adama"))
+res_Jijiga_vs_UCI <- results(ddsSiteUCI, contrast = c("Site", "Jijiga", "UCI"))
+res_Erer_vs_UCI <- results(ddsSiteUCI, contrast = c("Site", "Erer", "UCI"))
+res_Adama_vs_UCI <- results(ddsSiteUCI, contrast = c("Site", "Adama", "UCI"))
+res_Wild_vs_Lab <- results(ddsCollection, contrast = c("Collection", "Wild", "Lab"))
 
 # 9. Shrink log2 fold-changes for more accurate effect sizes. It is very important to pick the correct model.
 resLFC_IS2_vs_IS1 <- lfcShrink(ddsIS1,
@@ -117,11 +164,51 @@ resLFC_IS3_vs_IS2 <- lfcShrink(ddsIS2,
 resLFC_IS4_vs_IS3 <- lfcShrink(ddsIS3,
                                coef = 4,
                              type="apeglm")
+resLFC_Erer_vs_Jijiga <- lfcShrink(ddsSiteJijiga,
+                               coef = 4,
+                               type="apeglm")
+resLFC_Adama_vs_Jijiga <- lfcShrink(ddsSiteJijiga,
+                                   coef = 3,
+                                   type="apeglm")
+resLFC_Jijiga_vs_Erer <- lfcShrink(ddsSiteErer,
+                                    coef = 4,
+                                    type="apeglm")
+resLFC_Adama_vs_Erer <- lfcShrink(ddsSiteErer,
+                                   coef = 3,
+                                   type="apeglm")
+resLFC_Jijiga_vs_Adama <- lfcShrink(ddsSiteAdama,
+                                  coef = 4,
+                                  type="apeglm")
+resLFC_Erer_vs_Adama <- lfcShrink(ddsSiteAdama,
+                                    coef = 3,
+                                    type="apeglm")
+resLFC_Adama_vs_UCI <- lfcShrink(ddsSiteUCI,
+                                  coef = 2,
+                                  type="apeglm")
+resLFC_Erer_vs_UCI <- lfcShrink(ddsSiteUCI,
+                                 coef = 3,
+                                 type="apeglm")
+resLFC_Jijiga_vs_UCI <- lfcShrink(ddsSiteUCI,
+                                coef = 4,
+                                type="apeglm")
+resLFC_Wild_vs_Lab <- lfcShrink(ddsCollection,
+                                  coef = 2,
+                                  type="apeglm")
 
 # 10. Quick summaries
 summary(resLFC_IS2_vs_IS1)
 summary(resLFC_IS3_vs_IS2)
 summary(resLFC_IS4_vs_IS3)
+summary(resLFC_Erer_vs_Jijiga)
+summary(resLFC_Adama_vs_Jijiga)
+summary(resLFC_Jijiga_vs_Erer)
+summary(resLFC_Adama_vs_Erer)
+summary(resLFC_Jijiga_vs_Adama)
+summary(resLFC_Erer_vs_Adama)
+summary(resLFC_Jijiga_vs_UCI)
+summary(resLFC_Erer_vs_UCI)
+summary(resLFC_Adama_vs_UCI)
+summary(resLFC_Wild_vs_Lab)
 
 # 11. Export top tables (e.g. padj < 0.05 & |log2FC| > 1)
 sigUp_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange > 1)
@@ -130,6 +217,26 @@ sigUp_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange > 1)
 sigDown_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange < 1)
 sigUp_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange > 1)
 sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < 1)
+sigUp_Erer_vs_Jijiga <- subset(resLFC_Erer_vs_Jijiga, padj < 0.05 & log2FoldChange > 1)
+sigDown_Erer_vs_Jijiga <- subset(resLFC_Erer_vs_Jijiga, padj < 0.05 & log2FoldChange < 1)
+sigUp_Adama_vs_Jijiga <- subset(resLFC_Adama_vs_Jijiga, padj < 0.05 & log2FoldChange > 1)
+sigDown_Adama_vs_Jijiga <- subset(resLFC_Adama_vs_Jijiga, padj < 0.05 & log2FoldChange < 1)
+sigUp_Jijiga_vs_Erer <- subset(resLFC_Jijiga_vs_Erer, padj < 0.05 & log2FoldChange > 1)
+sigDown_Jijiga_vs_Erer <- subset(resLFC_Jijiga_vs_Erer, padj < 0.05 & log2FoldChange < 1)
+sigUp_Adama_vs_Erer <- subset(resLFC_Adama_vs_Erer, padj < 0.05 & log2FoldChange > 1)
+sigDown_Adama_vs_Erer <- subset(resLFC_Adama_vs_Erer, padj < 0.05 & log2FoldChange < 1)
+sigUp_Jijiga_vs_Adama <- subset(resLFC_Jijiga_vs_Adama, padj < 0.05 & log2FoldChange > 1)
+sigDown_Jijiga_vs_Adama <- subset(resLFC_Jijiga_vs_Adama, padj < 0.05 & log2FoldChange < 1)
+sigUp_Erer_vs_Adama <- subset(resLFC_Erer_vs_Adama, padj < 0.05 & log2FoldChange > 1)
+sigDown_Erer_vs_Adama <- subset(resLFC_Erer_vs_Adama, padj < 0.05 & log2FoldChange < 1)
+sigUp_Jijiga_vs_UCI <- subset(resLFC_Jijiga_vs_UCI, padj < 0.05 & log2FoldChange > 1)
+sigDown_Jijiga_vs_UCI <- subset(resLFC_Jijiga_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigUp_Erer_vs_UCI <- subset(resLFC_Erer_vs_UCI, padj < 0.05 & log2FoldChange > 1)
+sigDown_Erer_vs_UCI <- subset(resLFC_Erer_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigUp_Adama_vs_UCI <- subset(resLFC_Adama_vs_UCI, padj < 0.05 & log2FoldChange > 1)
+sigDown_Adama_vs_UCI <- subset(resLFC_Adama_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigUp_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange > 1)
+sigDown_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange < 1)
 
 # write.csv(as.data.frame(sig_L2_vs_L1), file="DEG_L2_vs_L1.csv")
 
@@ -137,10 +244,14 @@ sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < 1
 vsdIS1 <- vst(ddsIS1, blind=FALSE)
 vsdIS2 <- vst(ddsIS2, blind=FALSE)
 vsdIS3 <- vst(ddsIS3, blind=FALSE)
+vsdSite <- vst(ddsSite, blind = FALSE)
 
 # Plotting PCA
 stages_PCA_plot <- plotPCA(vsdIS3, intgroup="stage") +
   ggtitle("PCA of An. stephensi larval stages")
+
+Site_PCA_plot <- plotPCA(vsdSite, intgroup=c("Site", "stage")) +
+  ggtitle("PCA of An. stephensi by site")
 
 png(file = paste("./UCI_Diff_Exp_plots/Anstep_Larval_stages_PCA_plot.png"), width = 10, height = 5, units = "in", res = 300)
 print(stages_PCA_plot)
