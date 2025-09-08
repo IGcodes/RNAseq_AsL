@@ -318,6 +318,23 @@ sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigU
 # 16. Run KEGG over-representation analysis
 # Here I will be running the KEGGS analysis and will be generating the plots in the same loop.
 
+# Saving the significant genes in CSV files
+
+for (sgdf in sigGeneVars){
+  # This replaces "_gene_ids" with nothing, e.g., "sigUp_IS2_vs_IS1_gene_ids" -> "sigUp_IS2_vs_IS1"
+  df_identifier <- gsub("_gene_ids", "", sgdf)
+  # Convert the enrichKEGG result to a data frame
+  kegg_results_df <- get(df_identifier)
+  
+  if (nrow(kegg_results_df) > 0) {
+    # Define the output file path for the CSV
+    output_filename <- paste0("./significant_genes/", df_identifier, "_sig_genes.csv")
+    
+    # Write the data frame to a CSV file
+    write.csv(kegg_results_df, file = output_filename, row.names = FALSE)
+  }
+}
+
 # Looping over the variable names
 for (sgv in sigGeneVars){
   sigGeneIDs <- get(sgv)
