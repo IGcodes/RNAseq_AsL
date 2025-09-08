@@ -174,6 +174,21 @@ sigDown_IS4_vs_IS3_gene_ids <- rownames(sigDown_IS4_vs_IS3[ order(sigDown_IS4_vs
 sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigUp_IS4_vs_IS3_gene_ids",
                  "sigDown_IS2_vs_IS1_gene_ids", "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids")
 
+# Saving significant gene data as CSV files
+for (sgdf in sigGeneVars) {
+  df_identifier <- gsub("_gene_ids", "", sgdf)
+  sigGenes_df <- get(df_identifier)
+  sigGenes_df$geneID <- row.names(sigGenes_df)
+  
+  if (nrow(sigGenes_df) > 0) {
+    # Define the output file path for the CSV
+    output_filename <- paste0("./significant_genes/", df_identifier, "_sig_genes.csv")
+    
+    # Write the data frame to a CSV file
+    write.csv(sigGenes_df, file = output_filename, row.names = TRUE)
+  }
+}
+
 # 16. Run KEGG over-representation analysis
 # Here I will be running the KEGGS analysis and will be generating the plots in the same loop.
 
