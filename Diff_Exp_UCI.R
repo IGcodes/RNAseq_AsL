@@ -244,7 +244,7 @@ sigDown_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange <
 vsdIS1 <- vst(ddsIS1, blind=FALSE)
 vsdIS2 <- vst(ddsIS2, blind=FALSE)
 vsdIS3 <- vst(ddsIS3, blind=FALSE)
-vsdSite <- vst(ddsSite, blind = FALSE)
+vsdSite <- vst(ddsCollection, blind = FALSE)
 
 # Plotting PCA
 stages_PCA_plot <- plotPCA(vsdIS3, intgroup="stage") +
@@ -258,7 +258,7 @@ print(stages_PCA_plot)
 dev.off()
 
 # 13. Sample-to-sample distance heatmap
-sampleDists <- dist(t(assay(vsd)))
+sampleDists <- dist(t(assay(vsdSite)))
 mat <- as.matrix(sampleDists)
 rownames(mat) <- colnames(mat) <- sampleTable$sampleName
 pheatmap(mat,
@@ -280,10 +280,40 @@ sigUp_IS4_vs_IS3_gene_ids <- rownames(sigUp_IS4_vs_IS3[ order(sigUp_IS4_vs_IS3$l
 sigDown_IS2_vs_IS1_gene_ids <- rownames(sigDown_IS2_vs_IS1[ order(sigDown_IS2_vs_IS1$log2FoldChange, decreasing = TRUE), ])
 sigDown_IS3_vs_IS2_gene_ids <- rownames(sigDown_IS3_vs_IS2[ order(sigDown_IS3_vs_IS2$log2FoldChange, decreasing = TRUE), ])
 sigDown_IS4_vs_IS3_gene_ids <- rownames(sigDown_IS4_vs_IS3[ order(sigDown_IS4_vs_IS3$log2FoldChange, decreasing = TRUE), ])
+sigUp_Erer_vs_Jijiga_gene_ids <- rownames(sigUp_Erer_vs_Jijiga[ order(sigUp_Erer_vs_Jijiga$log2FoldChange, decreasing = TRUE), ])
+sigDown_Erer_vs_Jijiga_gene_ids <- rownames(sigDown_Erer_vs_Jijiga[ order(sigDown_Erer_vs_Jijiga$log2FoldChange, decreasing = TRUE), ])
+sigUp_Adama_vs_Jijiga_gene_ids <- rownames(sigUp_Adama_vs_Jijiga[ order(sigUp_Adama_vs_Jijiga$log2FoldChange, decreasing = TRUE), ])
+sigDown_Adama_vs_Jijiga_gene_ids <- rownames(sigDown_Adama_vs_Jijiga[ order(sigDown_Adama_vs_Jijiga$log2FoldChange, decreasing = TRUE), ])
+sigUp_Jijiga_vs_Erer_gene_ids <- rownames(sigUp_Jijiga_vs_Erer[ order(sigUp_Jijiga_vs_Erer$log2FoldChange, decreasing = TRUE), ])
+sigDown_Jijiga_vs_Erer_gene_ids <- rownames(sigDown_Jijiga_vs_Erer[ order(sigDown_Jijiga_vs_Erer$log2FoldChange, decreasing = TRUE), ])
+sigUp_Adama_vs_Erer_gene_ids <- rownames(sigUp_Adama_vs_Erer[ order(sigUp_Adama_vs_Erer$log2FoldChange, decreasing = TRUE), ])
+sigDown_Adama_vs_Erer_gene_ids <- rownames(sigDown_Adama_vs_Erer[ order(sigDown_Adama_vs_Erer$log2FoldChange, decreasing = TRUE), ])
+sigUp_Jijiga_vs_Adama_gene_ids <- rownames(sigUp_Jijiga_vs_Adama[ order(sigUp_Jijiga_vs_Adama$log2FoldChange, decreasing = TRUE), ])
+sigDown_Jijiga_vs_Adama_gene_ids <- rownames(sigDown_Jijiga_vs_Adama[ order(sigDown_Jijiga_vs_Adama$log2FoldChange, decreasing = TRUE), ])
+sigUp_Erer_vs_Adama_gene_ids <- rownames(sigUp_Erer_vs_Adama[ order(sigUp_Erer_vs_Adama$log2FoldChange, decreasing = TRUE), ])
+sigDown_Erer_vs_Adama_gene_ids <- rownames(sigDown_Erer_vs_Adama[ order(sigDown_Erer_vs_Adama$log2FoldChange, decreasing = TRUE), ])
+sigUp_Jijiga_vs_UCI_gene_ids <- rownames(sigUp_Jijiga_vs_UCI[ order(sigUp_Jijiga_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigDown_Jijiga_vs_UCI_gene_ids <- rownames(sigDown_Jijiga_vs_UCI[ order(sigDown_Jijiga_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigUp_Erer_vs_UCI_gene_ids <- rownames(sigUp_Erer_vs_UCI[ order(sigUp_Erer_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigDown_Erer_vs_UCI_gene_ids <- rownames(sigDown_Erer_vs_UCI[ order(sigDown_Erer_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigUp_Adama_vs_UCI_gene_ids <- rownames(sigUp_Adama_vs_UCI[ order(sigUp_Adama_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigDown_Adama_vs_UCI_gene_ids <- rownames(sigDown_Adama_vs_UCI[ order(sigDown_Adama_vs_UCI$log2FoldChange, decreasing = TRUE), ])
+sigUp_Wild_vs_Lab_gene_ids <- rownames(sigUp_Wild_vs_Lab[ order(sigUp_Wild_vs_Lab$log2FoldChange, decreasing = TRUE), ])
+sigDown_Wild_vs_Lab_gene_ids <- rownames(sigDown_Wild_vs_Lab[ order(sigDown_Wild_vs_Lab$log2FoldChange, decreasing = TRUE), ])
 
 # Here I'm creating a vector to hold the names of the vairables containing gene IDs to be used in the for loops.
 sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigUp_IS4_vs_IS3_gene_ids",
-                 "sigDown_IS2_vs_IS1_gene_ids", "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids")
+                 "sigDown_IS2_vs_IS1_gene_ids", "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids",
+                 "sigUp_Erer_vs_Jijiga_gene_ids", "sigDown_Erer_vs_Jijiga_gene_ids",
+                 "sigUp_Adama_vs_Jijiga_gene_ids", "sigDown_Adama_vs_Jijiga_gene_ids",
+                 "sigUp_Jijiga_vs_Erer_gene_ids", "sigDown_Jijiga_vs_Erer_gene_ids",
+                 "sigUp_Adama_vs_Erer_gene_ids", "sigDown_Adama_vs_Erer_gene_ids",
+                 "sigUp_Jijiga_vs_Adama_gene_ids", "sigDown_Jijiga_vs_Adama_gene_ids",
+                 "sigUp_Erer_vs_Adama_gene_ids", "sigDown_Erer_vs_Adama_gene_ids",
+                 "sigUp_Jijiga_vs_UCI_gene_ids", "sigDown_Jijiga_vs_UCI_gene_ids",
+                 "sigUp_Erer_vs_UCI_gene_ids", "sigDown_Erer_vs_UCI_gene_ids",
+                 "sigUp_Adama_vs_UCI_gene_ids", "sigDown_Adama_vs_UCI_gene_ids",
+                 "sigUp_Wild_vs_Lab_gene_ids", "sigDown_Wild_vs_Lab_gene_ids")
 
 # 16. Run KEGG over-representation analysis
 # Here I will be running the KEGGS analysis and will be generating the plots in the same loop.
@@ -302,6 +332,20 @@ for (sgv in sigGeneVars){
   
   # 4. Inspect results
   # print(head(as.data.frame(kegg_res)))
+  
+  # Saving the KEGGS results for each gene set in CSV file
+  # This replaces "_gene_ids" with nothing, e.g., "sigUp_IS2_vs_IS1_gene_ids" -> "sigUp_IS2_vs_IS1"
+  file_identifier <- gsub("_gene_ids", "", sgv)
+  # Convert the enrichKEGG result to a data frame
+  kegg_results_df <- as.data.frame(kegg_res)
+  
+  if (nrow(kegg_results_df) > 0) {
+    # Define the output file path for the CSV
+    output_filename <- paste0("./KEGGS_results/", file_identifier, "_KEGG_results.csv")
+    
+    # Write the data frame to a CSV file
+    write.csv(kegg_results_df, file = output_filename, row.names = FALSE)
+  }
   
   # Getting gene list identifier
   genListIDElements <- strsplit(sgv, "_gene_ids")
