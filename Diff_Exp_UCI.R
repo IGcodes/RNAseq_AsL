@@ -320,18 +320,19 @@ sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigU
 
 # Saving the significant genes in CSV files
 
-for (sgdf in sigGeneVars){
-  # This replaces "_gene_ids" with nothing, e.g., "sigUp_IS2_vs_IS1_gene_ids" -> "sigUp_IS2_vs_IS1"
+
+# Saving significant gene data as CSV files
+for (sgdf in sigGeneVars) {
   df_identifier <- gsub("_gene_ids", "", sgdf)
-  # Convert the enrichKEGG result to a data frame
-  kegg_results_df <- get(df_identifier)
+  sigGenes_df <- get(df_identifier)
+  sigGenes_df$geneID <- row.names(sigGenes_df)
   
-  if (nrow(kegg_results_df) > 0) {
+  if (nrow(sigGenes_df) > 0) {
     # Define the output file path for the CSV
     output_filename <- paste0("./significant_genes/", df_identifier, "_sig_genes.csv")
     
     # Write the data frame to a CSV file
-    write.csv(kegg_results_df, file = output_filename, row.names = FALSE)
+    write.csv(sigGenes_df, file = output_filename, row.names = TRUE)
   }
 }
 
