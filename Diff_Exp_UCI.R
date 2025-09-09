@@ -25,7 +25,7 @@ library(ggrepel)
 
 # 1. Read in sample metadata
 # Expect a table with columns: sampleName, stage, quant_dir
-sampleTable <- read_csv("./quant_files/All_sites_subset1.csv")
+sampleTable <- read_csv("./quant_files/All_sample_info.csv")
 # e.g. sample_info.csv:
 # sampleName,stage,quant_dir
 # S1,L1,/path/to/S1
@@ -105,9 +105,9 @@ ddsCollection <- ddsCollection[keep,]
 
 # 5.5 Setting the reference level for each larval stage separately
 ddsIS1$stage <- relevel(ddsIS1$stage, ref = "IS1")
-ddsIS2$stage <- relevel(ddsIS1$stage, ref = "IS2")
-ddsIS3$stage <- relevel(ddsIS1$stage, ref = "IS3")
-ddsIS4$stage <- relevel(ddsIS1$stage, ref = "IS4")
+ddsIS2$stage <- relevel(ddsIS2$stage, ref = "IS2")
+ddsIS3$stage <- relevel(ddsIS3$stage, ref = "IS3")
+ddsIS4$stage <- relevel(ddsIS4$stage, ref = "IS4")
 ddsSiteJijiga$Site <- relevel(ddsSiteJijiga$Site, ref = "Jijiga")
 ddsSiteErer$Site <- relevel(ddsSiteErer$Site, ref = "Erer")
 ddsSiteAdama$Site <- relevel(ddsSiteAdama$Site, ref = "Adama")
@@ -157,43 +157,43 @@ res_Wild_vs_Lab <- results(ddsCollection, contrast = c("Collection", "Wild", "La
 
 # 9. Shrink log2 fold-changes for more accurate effect sizes. It is very important to pick the correct model.
 resLFC_IS2_vs_IS1 <- lfcShrink(ddsIS1,
-                             coef = 2,
+                             coef = "stage_IS2_vs_IS1",
                              type="apeglm")
 resLFC_IS3_vs_IS2 <- lfcShrink(ddsIS2,
-                               coef = 3,
+                               coef = "stage_IS3_vs_IS2",
                              type="apeglm")
 resLFC_IS4_vs_IS3 <- lfcShrink(ddsIS3,
-                               coef = 4,
+                               coef = "stage_IS4_vs_IS3",
                              type="apeglm")
 resLFC_Erer_vs_Jijiga <- lfcShrink(ddsSiteJijiga,
-                               coef = 4,
+                               coef = "Site_Erer_vs_Jijiga",
                                type="apeglm")
 resLFC_Adama_vs_Jijiga <- lfcShrink(ddsSiteJijiga,
-                                   coef = 3,
+                                   coef = "Site_Adama_vs_Jijiga",
                                    type="apeglm")
 resLFC_Jijiga_vs_Erer <- lfcShrink(ddsSiteErer,
-                                    coef = 4,
+                                    coef = "Site_Jijiga_vs_Erer",
                                     type="apeglm")
 resLFC_Adama_vs_Erer <- lfcShrink(ddsSiteErer,
-                                   coef = 3,
+                                   coef = "Site_Adama_vs_Erer",
                                    type="apeglm")
 resLFC_Jijiga_vs_Adama <- lfcShrink(ddsSiteAdama,
-                                  coef = 4,
+                                  coef = "Site_Jijiga_vs_Adama",
                                   type="apeglm")
 resLFC_Erer_vs_Adama <- lfcShrink(ddsSiteAdama,
-                                    coef = 3,
+                                    coef = "Site_Erer_vs_Adama",
                                     type="apeglm")
 resLFC_Adama_vs_UCI <- lfcShrink(ddsSiteUCI,
-                                  coef = 2,
+                                  coef = "Site_Adama_vs_UCI",
                                   type="apeglm")
 resLFC_Erer_vs_UCI <- lfcShrink(ddsSiteUCI,
-                                 coef = 3,
+                                 coef = "Site_Erer_vs_UCI",
                                  type="apeglm")
 resLFC_Jijiga_vs_UCI <- lfcShrink(ddsSiteUCI,
-                                coef = 4,
+                                coef = "Site_Jijiga_vs_UCI",
                                 type="apeglm")
 resLFC_Wild_vs_Lab <- lfcShrink(ddsCollection,
-                                  coef = 2,
+                                  coef = "Collection_Wild_vs_Lab",
                                   type="apeglm")
 
 # 10. Quick summaries
@@ -213,31 +213,31 @@ summary(resLFC_Wild_vs_Lab)
 
 # 11. Export top tables (e.g. padj < 0.05 & |log2FC| > 1)
 sigUp_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange < -1)
 sigUp_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange < -1)
 sigUp_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < -1)
 sigUp_Erer_vs_Jijiga <- subset(resLFC_Erer_vs_Jijiga, padj < 0.05 & log2FoldChange > 1)
-sigDown_Erer_vs_Jijiga <- subset(resLFC_Erer_vs_Jijiga, padj < 0.05 & log2FoldChange < 1)
+sigDown_Erer_vs_Jijiga <- subset(resLFC_Erer_vs_Jijiga, padj < 0.05 & log2FoldChange < -1)
 sigUp_Adama_vs_Jijiga <- subset(resLFC_Adama_vs_Jijiga, padj < 0.05 & log2FoldChange > 1)
-sigDown_Adama_vs_Jijiga <- subset(resLFC_Adama_vs_Jijiga, padj < 0.05 & log2FoldChange < 1)
+sigDown_Adama_vs_Jijiga <- subset(resLFC_Adama_vs_Jijiga, padj < 0.05 & log2FoldChange < -1)
 sigUp_Jijiga_vs_Erer <- subset(resLFC_Jijiga_vs_Erer, padj < 0.05 & log2FoldChange > 1)
-sigDown_Jijiga_vs_Erer <- subset(resLFC_Jijiga_vs_Erer, padj < 0.05 & log2FoldChange < 1)
+sigDown_Jijiga_vs_Erer <- subset(resLFC_Jijiga_vs_Erer, padj < 0.05 & log2FoldChange < -1)
 sigUp_Adama_vs_Erer <- subset(resLFC_Adama_vs_Erer, padj < 0.05 & log2FoldChange > 1)
-sigDown_Adama_vs_Erer <- subset(resLFC_Adama_vs_Erer, padj < 0.05 & log2FoldChange < 1)
+sigDown_Adama_vs_Erer <- subset(resLFC_Adama_vs_Erer, padj < 0.05 & log2FoldChange < -1)
 sigUp_Jijiga_vs_Adama <- subset(resLFC_Jijiga_vs_Adama, padj < 0.05 & log2FoldChange > 1)
-sigDown_Jijiga_vs_Adama <- subset(resLFC_Jijiga_vs_Adama, padj < 0.05 & log2FoldChange < 1)
+sigDown_Jijiga_vs_Adama <- subset(resLFC_Jijiga_vs_Adama, padj < 0.05 & log2FoldChange < -1)
 sigUp_Erer_vs_Adama <- subset(resLFC_Erer_vs_Adama, padj < 0.05 & log2FoldChange > 1)
-sigDown_Erer_vs_Adama <- subset(resLFC_Erer_vs_Adama, padj < 0.05 & log2FoldChange < 1)
+sigDown_Erer_vs_Adama <- subset(resLFC_Erer_vs_Adama, padj < 0.05 & log2FoldChange < -1)
 sigUp_Jijiga_vs_UCI <- subset(resLFC_Jijiga_vs_UCI, padj < 0.05 & log2FoldChange > 1)
-sigDown_Jijiga_vs_UCI <- subset(resLFC_Jijiga_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigDown_Jijiga_vs_UCI <- subset(resLFC_Jijiga_vs_UCI, padj < 0.05 & log2FoldChange < -1)
 sigUp_Erer_vs_UCI <- subset(resLFC_Erer_vs_UCI, padj < 0.05 & log2FoldChange > 1)
-sigDown_Erer_vs_UCI <- subset(resLFC_Erer_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigDown_Erer_vs_UCI <- subset(resLFC_Erer_vs_UCI, padj < 0.05 & log2FoldChange < -1)
 sigUp_Adama_vs_UCI <- subset(resLFC_Adama_vs_UCI, padj < 0.05 & log2FoldChange > 1)
-sigDown_Adama_vs_UCI <- subset(resLFC_Adama_vs_UCI, padj < 0.05 & log2FoldChange < 1)
+sigDown_Adama_vs_UCI <- subset(resLFC_Adama_vs_UCI, padj < 0.05 & log2FoldChange < -1)
 sigUp_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange > 1)
-sigDown_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange < 1)
+sigDown_Wild_vs_Lab <- subset(resLFC_Wild_vs_Lab, padj < 0.05 & log2FoldChange < -1)
 
 # write.csv(as.data.frame(sig_L2_vs_L1), file="DEG_L2_vs_L1.csv")
 
@@ -252,20 +252,34 @@ stages_PCA_plot <- plotPCA(vsdIS3, intgroup="stage") +
   ggtitle("PCA of An. stephensi larval stages")
 
 Site_PCA_plot <- plotPCA(vsdSite, intgroup=c("Site", "stage")) +
-  ggtitle("PCA of An. stephensi by site") + geom_text_repel(aes(label = name))
+  ggtitle("PCA of An. stephensi by site") + 
+  geom_text_repel(aes(label = name)) +
+  stat_ellipse(aes(color = Site), type = "norm", level = 0.95) # type="norm" for normal distribution, level for confidence interval
 
-png(file = paste("./UCI_Diff_Exp_plots/Anstep_Larval_stages_PCA_plot.png"), width = 10, height = 5, units = "in", res = 300)
-print(stages_PCA_plot)
+png(file = paste("./UCI_Diff_Exp_plots/Anstep_Larvae_SitenStage_PCA_plot.png"), width = 8, height = 10, units = "in", res = 300)
+print(Site_PCA_plot)
 dev.off()
 
 # 13. Sample-to-sample distance heatmap
 sampleDists <- dist(t(assay(vsdSite)))
 mat <- as.matrix(sampleDists)
 rownames(mat) <- colnames(mat) <- sampleTable$sampleName
-pheatmap(mat,
+
+# Create the annotation data frame
+annotation_df <- data.frame(Site = sampleTable$Site)
+rownames(annotation_df) <- sampleTable$sampleName
+
+sampleDistPlot <- pheatmap(mat,
          clustering_distance_rows=sampleDists,
          clustering_distance_cols=sampleDists,
-         main="Sample distances")
+         main="Sample distances",
+         annotation_col = annotation_df,
+         annotation_row = annotation_df)  # Use for both rows and columns
+
+# Saving sample distance map
+png(file = paste("./UCI_Diff_Exp_plots/Anstep_Larvae_sample_distances_plot.png"), width = 10, height = 10, units = "in", res = 300)
+print(sampleDistPlot)
+dev.off()
 
 # 14. Optional: export normalized counts
 norm_counts <- counts(dds, normalized=TRUE)
@@ -303,8 +317,10 @@ sigUp_Wild_vs_Lab_gene_ids <- rownames(sigUp_Wild_vs_Lab[ order(sigUp_Wild_vs_La
 sigDown_Wild_vs_Lab_gene_ids <- rownames(sigDown_Wild_vs_Lab[ order(sigDown_Wild_vs_Lab$log2FoldChange, decreasing = TRUE), ])
 
 # Here I'm creating a vector to hold the names of the vairables containing gene IDs to be used in the for loops.
-sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS4_vs_IS3_gene_ids", # "sigUp_IS3_vs_IS2_gene_ids",
-                 "sigDown_IS2_vs_IS1_gene_ids", "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids",
+sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS4_vs_IS3_gene_ids", 
+                 # "sigUp_IS3_vs_IS2_gene_ids",
+                 # "sigDown_IS2_vs_IS1_gene_ids", 
+                 "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids",
                  "sigUp_Erer_vs_Jijiga_gene_ids", "sigDown_Erer_vs_Jijiga_gene_ids",
                  "sigUp_Adama_vs_Jijiga_gene_ids", "sigDown_Adama_vs_Jijiga_gene_ids",
                  "sigUp_Jijiga_vs_Erer_gene_ids", "sigDown_Jijiga_vs_Erer_gene_ids",
@@ -399,7 +415,7 @@ ann <- AnnotationDbi::select(
   columns = c("GO","ONTOLOGY"),
   keytype = "GID"
 )
-ann <- ann[!is.na(ann$GO) & ann$ONTOLOGY == "BP", c("GO","GID")]
+ann <- ann[!is.na(ann$GO), c("GO","GID")] # Removed filter for only Biological processes -  & ann$ONTOLOGY == "BP"
 colnames(ann) <- c("term", "gene")  # TERM2GENE
 
 # 2) Optional TERM2NAME (GO term names)
@@ -418,6 +434,37 @@ resLFC_IS3_vs_IS2 <- rownames_to_column(resLFC_IS3_vs_IS2, var = "gene")
 resLFC_IS4_vs_IS3 <- as.data.frame(resLFC_IS4_vs_IS3)
 resLFC_IS4_vs_IS3 <- rownames_to_column(resLFC_IS4_vs_IS3, var = "gene")
 
+resLFC_Erer_vs_Jijiga <- as.data.frame(resLFC_Erer_vs_Jijiga)
+resLFC_Erer_vs_Jijiga <- rownames_to_column(resLFC_Erer_vs_Jijiga, var = "gene")
+
+resLFC_Adama_vs_Jijiga <- as.data.frame(resLFC_Adama_vs_Jijiga)
+resLFC_Adama_vs_Jijiga <- rownames_to_column(resLFC_Adama_vs_Jijiga, var = "gene")
+
+resLFC_Jijiga_vs_Erer <- as.data.frame(resLFC_Jijiga_vs_Erer)
+resLFC_Jijiga_vs_Erer <- rownames_to_column(resLFC_Jijiga_vs_Erer, var = "gene")
+
+resLFC_Adama_vs_Erer <- as.data.frame(resLFC_Adama_vs_Erer)
+resLFC_Adama_vs_Erer <- rownames_to_column(resLFC_Adama_vs_Erer, var = "gene")
+
+resLFC_Jijiga_vs_Adama <- as.data.frame(resLFC_Jijiga_vs_Adama)
+resLFC_Jijiga_vs_Adama <- rownames_to_column(resLFC_Jijiga_vs_Adama, var = "gene")
+
+resLFC_Erer_vs_Adama <- as.data.frame(resLFC_Erer_vs_Adama)
+resLFC_Erer_vs_Adama <- rownames_to_column(resLFC_Erer_vs_Adama, var = "gene")
+
+resLFC_Adama_vs_UCI <- as.data.frame(resLFC_Adama_vs_UCI)
+resLFC_Adama_vs_UCI <- rownames_to_column(resLFC_Adama_vs_UCI, var = "gene")
+
+resLFC_Erer_vs_UCI <- as.data.frame(resLFC_Erer_vs_UCI)
+resLFC_Erer_vs_UCI <- rownames_to_column(resLFC_Erer_vs_UCI, var = "gene")
+
+resLFC_Jijiga_vs_UCI <- as.data.frame(resLFC_Jijiga_vs_UCI)
+resLFC_Jijiga_vs_UCI <- rownames_to_column(resLFC_Jijiga_vs_UCI, var = "gene")
+
+resLFC_Wild_vs_Lab <- as.data.frame(resLFC_Wild_vs_Lab)
+resLFC_Wild_vs_Lab <- rownames_to_column(resLFC_Wild_vs_Lab, var = "gene")
+
+
 # Drop NA adjusted p-values and log2FCs
 resLFC_IS2_vs_IS1 <- resLFC_IS2_vs_IS1 %>%
   filter(!is.na(log2FoldChange), !is.na(padj))
@@ -426,6 +473,36 @@ resLFC_IS3_vs_IS2 <- resLFC_IS3_vs_IS2 %>%
   filter(!is.na(log2FoldChange), !is.na(padj))
 
 resLFC_IS4_vs_IS3 <- resLFC_IS4_vs_IS3 %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Erer_vs_Jijiga <- resLFC_Erer_vs_Jijiga %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Adama_vs_Jijiga <- resLFC_Adama_vs_Jijiga %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Jijiga_vs_Erer <- resLFC_Jijiga_vs_Erer %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Adama_vs_Erer <- resLFC_Adama_vs_Erer %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Jijiga_vs_Adama <- resLFC_Jijiga_vs_Adama %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Erer_vs_Adama <- resLFC_Erer_vs_Adama %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Adama_vs_UCI <- resLFC_Adama_vs_UCI %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Erer_vs_UCI <- resLFC_Erer_vs_UCI %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Jijiga_vs_UCI <- resLFC_Jijiga_vs_UCI %>%
+  filter(!is.na(log2FoldChange), !is.na(padj))
+
+resLFC_Wild_vs_Lab <- resLFC_Wild_vs_Lab %>%
   filter(!is.na(log2FoldChange), !is.na(padj))
 
 # Create geneList named vector
@@ -438,6 +515,36 @@ names(geneList_IS3_vs_IS2) <- resLFC_IS3_vs_IS2$gene
 geneList_IS4_vs_IS3 <- resLFC_IS4_vs_IS3$log2FoldChange
 names(geneList_IS4_vs_IS3) <- resLFC_IS4_vs_IS3$gene
 
+geneList_Erer_vs_Jijiga <- resLFC_Erer_vs_Jijiga$log2FoldChange
+names(geneList_Erer_vs_Jijiga) <- resLFC_Erer_vs_Jijiga$gene
+
+geneList_Adama_vs_Jijiga <- resLFC_Adama_vs_Jijiga$log2FoldChange
+names(geneList_Adama_vs_Jijiga) <- resLFC_Adama_vs_Jijiga$gene
+
+geneList_Jijiga_vs_Erer <- resLFC_Jijiga_vs_Erer$log2FoldChange
+names(geneList_Jijiga_vs_Erer) <- resLFC_Jijiga_vs_Erer$gene
+
+geneList_Adama_vs_Erer <- resLFC_Adama_vs_Erer$log2FoldChange
+names(geneList_Adama_vs_Erer) <- resLFC_Adama_vs_Erer$gene
+
+geneList_Jijiga_vs_Adama <- resLFC_Jijiga_vs_Adama$log2FoldChange
+names(geneList_Jijiga_vs_Adama) <- resLFC_Jijiga_vs_Adama$gene
+
+geneList_Erer_vs_Adama <- resLFC_Erer_vs_Adama$log2FoldChange
+names(geneList_Erer_vs_Adama) <- resLFC_Erer_vs_Adama$gene
+
+geneList_Adama_vs_UCI <- resLFC_Adama_vs_UCI$log2FoldChange
+names(geneList_Adama_vs_UCI) <- resLFC_Adama_vs_UCI$gene
+
+geneList_Erer_vs_UCI <- resLFC_Erer_vs_UCI$log2FoldChange
+names(geneList_Erer_vs_UCI) <- resLFC_Erer_vs_UCI$gene
+
+geneList_Jijiga_vs_UCI <- resLFC_Jijiga_vs_UCI$log2FoldChange
+names(geneList_Jijiga_vs_UCI) <- resLFC_Jijiga_vs_UCI$gene
+
+geneList_Wild_vs_Lab <- resLFC_Wild_vs_Lab$log2FoldChange
+names(geneList_Wild_vs_Lab) <- resLFC_Wild_vs_Lab$gene
+
 # Sort in decreasing order
 geneList_IS2_vs_IS1 <- sort(geneList_IS2_vs_IS1, decreasing = TRUE)
 
@@ -445,9 +552,35 @@ geneList_IS3_vs_IS2 <- sort(geneList_IS3_vs_IS2, decreasing = TRUE)
 
 geneList_IS4_vs_IS3 <- sort(geneList_IS4_vs_IS3, decreasing = TRUE)
 
+geneList_Erer_vs_Jijiga <- sort(geneList_Erer_vs_Jijiga, decreasing = TRUE)
+
+geneList_Adama_vs_Jijiga <- sort(geneList_Adama_vs_Jijiga, decreasing = TRUE)
+
+geneList_Jijiga_vs_Erer <- sort(geneList_Jijiga_vs_Erer, decreasing = TRUE)
+
+geneList_Adama_vs_Erer <- sort(geneList_Adama_vs_Erer, decreasing = TRUE)
+
+geneList_Jijiga_vs_Adama <- sort(geneList_Jijiga_vs_Adama, decreasing = TRUE)
+
+geneList_Erer_vs_Adama <- sort(geneList_Erer_vs_Adama, decreasing = TRUE)
+
+geneList_Adama_vs_UCI <- sort(geneList_Adama_vs_UCI, decreasing = TRUE)
+
+geneList_Erer_vs_UCI <- sort(geneList_Erer_vs_UCI, decreasing = TRUE)
+
+geneList_Jijiga_vs_UCI <- sort(geneList_Jijiga_vs_UCI, decreasing = TRUE)
+
+geneList_Wild_vs_Lab <- sort(geneList_Wild_vs_Lab, decreasing = TRUE)
+
+
 # Running a for loop for the three gene lists to perform GSEA
 
-geneLists <- c("geneList_IS2_vs_IS1", "geneList_IS3_vs_IS2", "geneList_IS4_vs_IS3")
+geneLists <- c("geneList_IS2_vs_IS1", "geneList_IS3_vs_IS2", "geneList_IS4_vs_IS3", 
+               "geneList_Erer_vs_Jijiga", "geneList_Adama_vs_Jijiga",
+               "geneList_Jijiga_vs_Erer", "geneList_Adama_vs_Erer",
+               "geneList_Jijiga_vs_Adama", "geneList_Erer_vs_Adama",
+               "geneList_Adama_vs_UCI", "geneList_Erer_vs_UCI", "geneList_Jijiga_vs_UCI",
+               "geneList_Wild_vs_Lab")
 
 for (gl in geneLists){
   
@@ -466,6 +599,13 @@ for (gl in geneLists){
   # printing the head of gsea results table
   print(gsea_result@result)
   print(gl)
+  
+  # Saving GSEA results
+  file_identifier <- sub("^geneList_", "", gl)
+  GSEA_results_df <- if (is.null(gsea_result@result)) data.frame() else as.data.frame(gsea_result@result)
+  
+  # Saving Keggs results
+  write.csv(GSEA_results_df, file = file.path("./GSEA_results", paste0(file_identifier, "_GSEA_results.csv")), row.names = FALSE)
   
   # Dotplot
   png(file = paste("./UCI_Diff_Exp_plots/", gl, "_GSEA_dotplot.png", sep = ""), width = 10, height = 10, units = "in", res = 300)
@@ -512,6 +652,13 @@ for (sgv in sigGeneVars){
     minGSSize     = 10,
     maxGSSize     = 500
   )
+  
+  # Saving GSEA results
+  file_identifier <- sub("^_gene_ids$", "", sgv)
+  GOenrich_results_df <- if (is.null(enricher_res@result)) data.frame() else as.data.frame(enricher_res@result)
+  
+  # Saving Keggs results
+  write.csv(GOenrich_results_df, file = file.path("./GOenrichment_results", paste0(file_identifier, "_GOE_results.csv")), row.names = FALSE)
   
   ## Visualizing top 20 terms – ORA
   png(file = paste("./UCI_Diff_Exp_plots/", sgv, "_enricher_GO_dotplot.png", sep = ""), width = 10, height = 10, units = "in", res = 300)
