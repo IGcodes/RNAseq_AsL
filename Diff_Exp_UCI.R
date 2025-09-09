@@ -21,10 +21,11 @@ library(txdbmaker)
 library(biomaRt)
 library(org.Astephensi.eg.db)
 library(GO.db)
+library(ggrepel)
 
 # 1. Read in sample metadata
 # Expect a table with columns: sampleName, stage, quant_dir
-sampleTable <- read_csv("./quant_files/All_sample_info.csv")
+sampleTable <- read_csv("./quant_files/All_sites_subset1.csv")
 # e.g. sample_info.csv:
 # sampleName,stage,quant_dir
 # S1,L1,/path/to/S1
@@ -251,7 +252,7 @@ stages_PCA_plot <- plotPCA(vsdIS3, intgroup="stage") +
   ggtitle("PCA of An. stephensi larval stages")
 
 Site_PCA_plot <- plotPCA(vsdSite, intgroup=c("Site", "stage")) +
-  ggtitle("PCA of An. stephensi by site")
+  ggtitle("PCA of An. stephensi by site") + geom_text_repel(aes(label = name))
 
 png(file = paste("./UCI_Diff_Exp_plots/Anstep_Larval_stages_PCA_plot.png"), width = 10, height = 5, units = "in", res = 300)
 print(stages_PCA_plot)
@@ -302,7 +303,7 @@ sigUp_Wild_vs_Lab_gene_ids <- rownames(sigUp_Wild_vs_Lab[ order(sigUp_Wild_vs_La
 sigDown_Wild_vs_Lab_gene_ids <- rownames(sigDown_Wild_vs_Lab[ order(sigDown_Wild_vs_Lab$log2FoldChange, decreasing = TRUE), ])
 
 # Here I'm creating a vector to hold the names of the vairables containing gene IDs to be used in the for loops.
-sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigUp_IS4_vs_IS3_gene_ids",
+sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS4_vs_IS3_gene_ids", # "sigUp_IS3_vs_IS2_gene_ids",
                  "sigDown_IS2_vs_IS1_gene_ids", "sigDown_IS3_vs_IS2_gene_ids", "sigDown_IS4_vs_IS3_gene_ids",
                  "sigUp_Erer_vs_Jijiga_gene_ids", "sigDown_Erer_vs_Jijiga_gene_ids",
                  "sigUp_Adama_vs_Jijiga_gene_ids", "sigDown_Adama_vs_Jijiga_gene_ids",
@@ -314,12 +315,6 @@ sigGeneVars <- c("sigUp_IS2_vs_IS1_gene_ids", "sigUp_IS3_vs_IS2_gene_ids", "sigU
                  "sigUp_Erer_vs_UCI_gene_ids", "sigDown_Erer_vs_UCI_gene_ids",
                  "sigUp_Adama_vs_UCI_gene_ids", "sigDown_Adama_vs_UCI_gene_ids",
                  "sigUp_Wild_vs_Lab_gene_ids", "sigDown_Wild_vs_Lab_gene_ids")
-
-# 16. Run KEGG over-representation analysis
-# Here I will be running the KEGGS analysis and will be generating the plots in the same loop.
-
-# Saving the significant genes in CSV files
-
 
 # Saving significant gene data as CSV files
 for (sgdf in sigGeneVars) {
@@ -335,6 +330,9 @@ for (sgdf in sigGeneVars) {
     write.csv(sigGenes_df, file = output_filename, row.names = TRUE)
   }
 }
+
+# 16. Run KEGG over-representation analysis
+# Here I will be running the KEGGS analysis and will be generating the plots in the same loop.
 
 # Looping over the variable names
 for (sgv in sigGeneVars){
