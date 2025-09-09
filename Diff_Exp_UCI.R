@@ -82,9 +82,9 @@ ddsIS4 <- ddsIS4[keep,]
 
 # 5.5 Setting the reference level for each larval stage separately
 ddsIS1$stage <- relevel(ddsIS1$stage, ref = "IS1")
-ddsIS2$stage <- relevel(ddsIS1$stage, ref = "IS2")
-ddsIS3$stage <- relevel(ddsIS1$stage, ref = "IS3")
-ddsIS4$stage <- relevel(ddsIS1$stage, ref = "IS4")
+ddsIS2$stage <- relevel(ddsIS2$stage, ref = "IS2")
+ddsIS3$stage <- relevel(ddsIS3$stage, ref = "IS3")
+ddsIS4$stage <- relevel(ddsIS4$stage, ref = "IS4")
 
 # 6. Run the DESeq pipeline
 ddsIS1 <- DESeq(ddsIS1)
@@ -109,13 +109,13 @@ res_IS4_vs_IS3 <- results(ddsIS3, contrast=c("stage","IS4","IS3"))
 
 # 9. Shrink log2 fold-changes for more accurate effect sizes. It is very important to pick the correct model.
 resLFC_IS2_vs_IS1 <- lfcShrink(ddsIS1,
-                             coef = 2,
+                             coef = "stage_IS2_vs_IS1",
                              type="apeglm")
 resLFC_IS3_vs_IS2 <- lfcShrink(ddsIS2,
-                               coef = 3,
+                               coef = "stage_IS3_vs_IS2",
                              type="apeglm")
 resLFC_IS4_vs_IS3 <- lfcShrink(ddsIS3,
-                               coef = 4,
+                               coef = "stage_IS4_vs_IS3",
                              type="apeglm")
 
 # 10. Quick summaries
@@ -125,11 +125,11 @@ summary(resLFC_IS4_vs_IS3)
 
 # 11. Export top tables (e.g. padj < 0.05 & |log2FC| > 1)
 sigUp_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS2_vs_IS1 <- subset(resLFC_IS2_vs_IS1, padj < 0.05 & log2FoldChange < -1)
 sigUp_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS3_vs_IS2 <- subset(resLFC_IS3_vs_IS2, padj < 0.05 & log2FoldChange < -1)
 sigUp_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange > 1)
-sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < 1)
+sigDown_IS4_vs_IS3 <- subset(resLFC_IS4_vs_IS3, padj < 0.05 & log2FoldChange < -1)
 
 # write.csv(as.data.frame(sig_L2_vs_L1), file="DEG_L2_vs_L1.csv")
 
@@ -207,6 +207,12 @@ for (sgv in sigGeneVars){
   # 4. Inspect results
   # print(head(as.data.frame(kegg_res)))
   
+  file_identifier <- sub("_gene_ids$", "", sgv)
+  kegg_results_df <- if (is.null(kegg_res)) data.frame() else as.data.frame(kegg_res)
+  
+  # Saving Keggs results
+  write.csv(kegg_results_df, file = file.path("./KEGGS_results", paste0(file_identifier, "_KEGG_results.csv")), row.names = FALSE)
+  
   # Getting gene list identifier
   genListIDElements <- strsplit(sgv, "_gene_ids")
   
@@ -243,7 +249,7 @@ ann <- AnnotationDbi::select(
   columns = c("GO","ONTOLOGY"),
   keytype = "GID"
 )
-ann <- ann[!is.na(ann$GO) & ann$ONTOLOGY == "BP", c("GO","GID")]
+ann <- ann[!is.na(ann$GO), c("GO","GID")] # Removed filter for only Biological processes -  & ann$ONTOLOGY == "BP"
 colnames(ann) <- c("term", "gene")  # TERM2GENE
 
 # 2) Optional TERM2NAME (GO term names)
@@ -254,13 +260,13 @@ colnames(term_names) <- c("term","name")  # TERM2NAME
 # First I need to get the ranked gene lists
 # Ensure rownames are gene IDs (must be Entrez IDs or mapped to them)
 resLFC_IS2_vs_IS1 <- as.data.frame(resLFC_IS2_vs_IS1)
-resLFC_IS2_vs_IS1 <- rownames_to_column(resLFC_IS2_vs_IS1, var = "gene")
+# resLFC_IS2_vs_IS1 <- rownames_to_column(resLFC_IS2_vs_IS1, var = "gene")
 
 resLFC_IS3_vs_IS2 <- as.data.frame(resLFC_IS3_vs_IS2)
-resLFC_IS3_vs_IS2 <- rownames_to_column(resLFC_IS3_vs_IS2, var = "gene")
+# resLFC_IS3_vs_IS2 <- rownames_to_column(resLFC_IS3_vs_IS2, var = "gene")
 
 resLFC_IS4_vs_IS3 <- as.data.frame(resLFC_IS4_vs_IS3)
-resLFC_IS4_vs_IS3 <- rownames_to_column(resLFC_IS4_vs_IS3, var = "gene")
+# resLFC_IS4_vs_IS3 <- rownames_to_column(resLFC_IS4_vs_IS3, var = "gene")
 
 # Drop NA adjusted p-values and log2FCs
 resLFC_IS2_vs_IS1 <- resLFC_IS2_vs_IS1 %>%
@@ -311,6 +317,14 @@ for (gl in geneLists){
   print(gsea_result@result)
   print(gl)
   
+  # Saving GSEA results
+  file_identifier <- sub("^geneList_", "", gl)
+  GSEA_results_df <- if (is.null(gsea_result@result)) data.frame() else as.data.frame(gsea_result@result)
+  
+  # Saving Keggs results
+  write.csv(GSEA_results_df, file = file.path("./GSEA_results", paste0(file_identifier, "_GSEA_results.csv")), row.names = FALSE)
+  
+  
   # Dotplot
   png(file = paste("./UCI_Diff_Exp_plots/", gl, "_GSEA_dotplot.png", sep = ""), width = 10, height = 10, units = "in", res = 300)
   print(dotplot(gsea_result, showCategory = 20, title = paste(gl, "GSEA dotplot", sep = " ")))
@@ -356,6 +370,13 @@ for (sgv in sigGeneVars){
     minGSSize     = 10,
     maxGSSize     = 500
   )
+  
+  # Saving GSEA results
+  file_identifier <- sub("^_gene_ids$", "", sgv)
+  GOenrich_results_df <- if (is.null(enricher_res@result)) data.frame() else as.data.frame(enricher_res@result)
+  
+  # Saving Keggs results
+  write.csv(GOenrich_results_df, file = file.path("./GOenrichment_results", paste0(file_identifier, "_GOE_results.csv")), row.names = FALSE)
   
   ## Visualizing top 20 terms – ORA
   png(file = paste("./UCI_Diff_Exp_plots/", sgv, "_enricher_GO_dotplot.png", sep = ""), width = 10, height = 10, units = "in", res = 300)
