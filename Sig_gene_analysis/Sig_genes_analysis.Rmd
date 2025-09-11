@@ -1,0 +1,210 @@
+---
+title: "Significant_genes_analysis"
+author: "Isuru Gunarathna"
+date: "2025-09-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+```{r backgroundsetup}
+# Setting working directory
+setwd("C:/Users/aaisu/Box/Carter Lab/Projects/RNAseq_EthiopiaNUCI/Sig_gene_analysis")
+
+# Importing libraries
+library(tidyverse)
+
+```
+
+# Importing data
+Script to Read Multiple CSV Files from a Directory
+
+```{r importData, warning=TRUE}
+# R Script to Read Multiple CSV Files from Several Directories
+
+# --- Setup: Define directories and create empty lists ---
+
+# Define paths to the data directories
+directories <- list(
+  UCI_only = "../significant_genes/UCI_larval_stages_alone",
+  All_samples = "../significant_genes/All_samples",
+  WC_samples = "../significant_genes/WC_samples",
+  WC_NO_samples = "../significant_genes/WC_NO_samples"
+)
+
+# Create a master list to hold the data from each directory
+all_data <- list()
+
+# --- Main Loop: Process each directory ---
+
+cat("Starting to read files from all directories...\n\n")
+
+# Loop through each directory path defined above
+# 'dir_name' will be "UCI_only", "All_samples", etc.
+# 'dir_path' will be the full path string
+for (dir_name in names(directories)) {
+  dir_path <- directories[[dir_name]]
+  
+  cat("--- Processing Directory:", dir_name, "---\n")
+  
+  # 1. Get a list of all files with the .csv extension in the current directory
+  file_list <- list.files(path = dir_path, pattern = "\\.csv$", full.names = TRUE)
+  
+  # Check if any files were found
+  if (length(file_list) == 0) {
+    cat("No CSV files found in this directory. Skipping.\n\n")
+    next # Skips to the next iteration of the loop
+  }
+  
+  # 2. Create a temporary empty list to store the data frames for this directory
+  current_directory_data <- list()
+  
+  # 3. Inner loop through each file in the current directory's list
+  for (file_path in file_list) {
+    
+    # --- Reading the file ---
+    # Using read.table as the columns appear to be space-separated
+    current_file <- read.table(file_path, header = TRUE)
+    
+    # --- Storing the data ---
+    # Create a clean name from the filename (e.g., "path/to/sample1.csv" -> "sample1")
+    df_name <- sub(pattern = "\\.csv$", replacement = "", x = basename(file_path))
+    
+    # Add the data frame to the temporary list for this directory
+    current_directory_data[[df_name]] <- current_file
+    
+    cat("Successfully read:", basename(file_path), "\n")
+  }
+  
+  # 4. Add the list of data frames for the directory to the main 'all_data' list
+  all_data[[dir_name]] <- current_directory_data
+  cat("--- Finished processing directory:", dir_name, "---\n\n")
+}
+
+cat("...Finished reading all files.\n")
+
+
+# --- Accessing your data ---
+# Now, all your data is neatly organized in the 'all_data' list.
+# You can see the main categories (the directories).
+print("Directories loaded:")
+print(names(all_data))
+
+# You can access the data for a whole directory, which is itself a list of data frames.
+# For example, to see the files loaded from the 'UCI_only' directory:
+# names(all_data$UCI_only)
+
+# To access a specific data frame, you would use a path like this:
+# For example, to get the 'sample1' data from the 'WC_samples' directory:
+# head(all_data$WC_samples$sample1)
+
+
+```
+
+# Making comparisons
+Script to Find Intersections and Differences Between Specified Data Frames
+
+```{r comparisons}
+
+# ** IMPORTANT **
+# Create a data frame that lists the pairs you want to compare.
+# The strings MUST match the structure `directory$dataframe_name`.
+# This is the primary part you will need to edit for your own analysis.
+combinations_df <- data.frame(
+  Set1 = c("UCI_only$exp1", "UCI_only$exp1", "All_samples$control1"),
+  Set2 = c("UCI_only$exp2", "All_samples$control1", "All_samples$treatment1"),
+  stringsAsFactors = FALSE
+)
+
+# Define the column name that contains the IDs you want to compare.
+# Based on your file, this should be "geneID".
+key_column <- "geneID"
+
+# Create an empty list to store the results of your comparisons.
+comparison_results <- list()
+
+
+# --- 2. MAIN LOOP: ITERATE THROUGH COMBINATIONS AND COMPARE ---
+
+cat("Starting comparisons...\n")
+
+# Loop through each row of the combinations_df
+for (i in 1:nrow(combinations_df)) {
+  
+  # --- Get the names and paths for the two sets to compare ---
+  set1_path_str <- combinations_df$Set1[i]
+  set2_path_str <- combinations_df$Set2[i]
+  
+  cat("\nComparing:", set1_path_str, "vs", set2_path_str, "\n")
+  
+  # --- Parse the strings to access the data frames in the nested list ---
+  # Example: "UCI_only$exp1" becomes c("UCI_only", "exp1")
+  set1_parts <- unlist(strsplit(set1_path_str, "$", fixed = TRUE))
+  set2_parts <- unlist(strsplit(set2_path_str, "$", fixed = TRUE))
+  
+  # Retrieve the actual data frames
+  df1 <- all_data[[set1_parts[1]]][[set1_parts[2]]]
+  df2 <- all_data[[set2_parts[1]]][[set2_parts[2]]]
+  
+  # --- Extract the vector of IDs from the key column ---
+  ids1 <- df1[[key_column]]
+  ids2 <- df2[[key_column]]
+  
+  # --- Perform the set operations ---
+  # Intersection: IDs present in BOTH sets
+  intersect_ids <- intersect(ids1, ids2)
+  
+  # Difference 1: IDs present in Set1 but NOT in Set2
+  diff_set1_only <- setdiff(ids1, ids2)
+  
+  # Difference 2: IDs present in Set2 but NOT in Set1
+  diff_set2_only <- setdiff(ids2, ids1)
+  
+  # --- Store the results in a list ---
+  # Create a clean name for the result entry
+  comparison_name <- paste0(gsub("\\$", "_", set1_path_str), "_vs_", gsub("\\$", "_", set2_path_str))
+  
+  comparison_results[[comparison_name]] <- list(
+    intersection = intersect_ids,
+    in_set1_only = diff_set1_only,
+    in_set2_only = diff_set2_only
+  )
+  
+  cat(" -> Found", length(intersect_ids), "common IDs.\n")
+}
+
+cat("\n...All comparisons finished.\n")
+
+
+# --- 3. ACCESSING AND VIEWING RESULTS ---
+
+# The `comparison_results` list now holds all your results.
+cat("\n--- Summary of Results ---\n")
+print(names(comparison_results))
+
+# You can access the results for a specific comparison like this:
+# For example, to see the results for the first comparison we defined:
+cat("\n--- Example: Details for UCI_only_exp1_vs_UCI_only_exp2 ---\n")
+print(comparison_results$UCI_only_exp1_vs_UCI_only_exp2)
+
+# To get just the intersection from that comparison:
+# intersection_vector <- comparison_results$UCI_only_exp1_vs_UCI_only_exp2$intersection
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
