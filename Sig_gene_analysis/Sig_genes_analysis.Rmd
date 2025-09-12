@@ -11,19 +11,38 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup
 
-```{r backgroundsetup}
+```{r backgroundsetup, include=FALSE, results='hide'}
 # Setting working directory
 setwd("C:/Users/aaisu/Box/Carter Lab/Projects/RNAseq_EthiopiaNUCI/Sig_gene_analysis")
 
 # Importing libraries
 library(tidyverse)
+library(rtracklayer)
+library(GenomicFeatures)
+library(DESeq2)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(tximport)
+library(readr)
+library(AnnotationDbi)     # if you need to map IDs
+library(apeglm)            # for LFC shrinkage
+library(pheatmap)
+library(clusterProfiler)
+library(enrichplot)
+library(AnnotationForge)
+library(txdbmaker)
+library(biomaRt)
+library(org.Astephensi.eg.db)
+library(GO.db)
+library(ggrepel)
 
 ```
 
 # Importing data
 Script to Read Multiple CSV Files from a Directory
 
-```{r importData, warning=TRUE}
+```{r importData, warning=TRUE, include=FALSE}
 # R Script to Read Multiple CSV Files from Several Directories
 
 # --- Setup: Define directories and create empty lists ---
@@ -68,7 +87,7 @@ for (dir_name in names(directories)) {
     
     # --- Reading the file ---
     # Using read.table as the columns appear to be space-separated
-    current_file <- read.table(file_path, header = TRUE)
+    current_file <- read.csv(file_path, header = TRUE)
     
     # --- Storing the data ---
     # Create a clean name from the filename (e.g., "path/to/sample1.csv" -> "sample1")
@@ -105,20 +124,103 @@ print(names(all_data))
 
 ```
 
+
+# Combinig differentially expressed genes in larval stages
+
+```{r UCI_uniqueSgCombination, include=FALSE}
+
+# --- 1. SEPARATE AND PROCESS GENE LISTS ---
+
+# Define the target list and the column with gene IDs
+target_list <- all_data$UCI_only
+key_column <- "geneID"
+
+# Get the names of all data frames in the target list
+df_names <- names(target_list)
+
+# --- Process Up-Regulated Genes ---
+
+# Find the names of data frames starting with "sigUp"
+up_regulated_names <- df_names[startsWith(df_names, "sigUp")]
+cat("Found Up-regulated data frames:", up_regulated_names, "\n")
+
+# Subset the list to get only the up-regulated data frames
+up_regulated_list <- target_list[up_regulated_names]
+
+# Combine, find unique genes, and create the new data frame
+# This block is wrapped in an if-condition to prevent errors if no files are found
+if (length(up_regulated_list) > 0) {
+  combined_sigUp_df <- bind_rows(up_regulated_list)
+  
+  unique_sigUp_df <- combined_sigUp_df %>%
+    distinct(!!sym(key_column), .keep_all = TRUE)
+  
+  # Add the new data frame back to the list
+  all_data$UCI_only$combined_sigUp_unique <- unique_sigUp_df
+  cat("Successfully created and added 'combined_sigUp_unique'.\n")
+} else {
+  cat("No data frames starting with 'sigUp' were found.\n")
+}
+
+
+# --- Process Down-Regulated Genes ---
+
+# Find the names of data frames starting with "sigDown"
+down_regulated_names <- df_names[startsWith(df_names, "sigDown")]
+cat("\nFound Down-regulated data frames:", down_regulated_names, "\n")
+
+# Subset the list to get only the down-regulated data frames
+down_regulated_list <- target_list[down_regulated_names]
+
+# Combine, find unique genes, and create the new data frame
+if (length(down_regulated_list) > 0) {
+  combined_sigDown_df <- bind_rows(down_regulated_list)
+  
+  unique_sigDown_df <- combined_sigDown_df %>%
+    distinct(!!sym(key_column), .keep_all = TRUE)
+
+  # Add the new data frame back to the list
+  all_data$UCI_only$combined_sigDown_unique <- unique_sigDown_df
+  cat("Successfully created and added 'combined_sigDown_unique'.\n")
+} else {
+  cat("No data frames starting with 'sigDown' were found.\n")
+}
+
+
+# --- 3. VERIFICATION ---
+
+cat("\n--- Verification ---\n")
+cat("Final list of data frames in UCI_only:\n")
+print(names(all_data$UCI_only))
+
+# Check the new up-regulated data frame
+if ("combined_sigUp_unique" %in% names(all_data$UCI_only)) {
+  cat("\nDimensions of the unique UP-regulated data frame:\n")
+  print(dim(all_data$UCI_only$combined_sigUp_unique))
+  print(head(all_data$UCI_only$combined_sigUp_unique))
+}
+
+# Check the new down-regulated data frame
+if ("combined_sigDown_unique" %in% names(all_data$UCI_only)) {
+  cat("\nDimensions of the unique DOWN-regulated data frame:\n")
+  print(dim(all_data$UCI_only$combined_sigDown_unique))
+  print(head(all_data$UCI_only$combined_sigDown_unique))
+}
+
+
+```
+
+
 # Making comparisons
 Script to Find Intersections and Differences Between Specified Data Frames
 
-```{r comparisons}
+```{r comparisons, include=FALSE}
 
 # ** IMPORTANT **
 # Create a data frame that lists the pairs you want to compare.
 # The strings MUST match the structure `directory$dataframe_name`.
 # This is the primary part you will need to edit for your own analysis.
-combinations_df <- data.frame(
-  Set1 = c("UCI_only$exp1", "UCI_only$exp1", "All_samples$control1"),
-  Set2 = c("UCI_only$exp2", "All_samples$control1", "All_samples$treatment1"),
-  stringsAsFactors = FALSE
-)
+combinations_df <- read.csv("data_frame_comparisons.csv")
 
 # Define the column name that contains the IDs you want to compare.
 # Based on your file, this should be "geneID".
@@ -174,7 +276,7 @@ for (i in 1:nrow(combinations_df)) {
     in_set2_only = diff_set2_only
   )
   
-  cat(" -> Found", length(intersect_ids), "common IDs.\n")
+  cat(" -> Found", length(diff_set1_only), "Unique IDs in the interested set.\n")
 }
 
 cat("\n...All comparisons finished.\n")
@@ -183,19 +285,179 @@ cat("\n...All comparisons finished.\n")
 # --- 3. ACCESSING AND VIEWING RESULTS ---
 
 # The `comparison_results` list now holds all your results.
-cat("\n--- Summary of Results ---\n")
-print(names(comparison_results))
+# cat("\n--- Summary of Results ---\n")
+# print(names(comparison_results))
 
 # You can access the results for a specific comparison like this:
 # For example, to see the results for the first comparison we defined:
-cat("\n--- Example: Details for UCI_only_exp1_vs_UCI_only_exp2 ---\n")
-print(comparison_results$UCI_only_exp1_vs_UCI_only_exp2)
+# cat("\n--- Example: Details for UCI_only_exp1_vs_UCI_only_exp2 ---\n")
+# print(comparison_results$UCI_only_exp1_vs_UCI_only_exp2)
 
 # To get just the intersection from that comparison:
 # intersection_vector <- comparison_results$UCI_only_exp1_vs_UCI_only_exp2$intersection
 
 
 ```
+
+Perform KEGGS analysis for each unique set of genes
+
+```{r KEGGSanalysis}
+
+# Looping over the variable names
+for (sgv in names(comparison_results)) {
+
+  # --- CORRECTED LINE ---
+  # Use the [[ operator to programmatically access elements inside the list.
+  # 'sgv' is a variable holding the name of the element we want.
+  sigGeneIDs <- comparison_results[[sgv]][["in_set1_only"]]
+
+  # Check if there are any genes to analyze before proceeding
+  if (length(sigGeneIDs) == 0 || all(is.na(sigGeneIDs))) {
+      cat("Skipping", sgv, "- No genes found in 'in_set1_only'.\n")
+      next # 'next' skips to the next iteration of the loop
+  }
+
+  kegg_res <- enrichKEGG(
+    gene         = sigGeneIDs,
+    organism     = "aste",         # An. stephensi KEGG code
+    keyType      = "ncbi-geneid",  # assuming your IDs are NCBI-GeneIDs
+    pAdjustMethod = "BH",
+    pvalueCutoff = 0.05,
+    qvalueCutoff = 0.10
+  )
+
+  # Saving the KEGGS results for each gene set in CSV file
+  file_identifier <- gsub("_unique", "", sgv)
+  kegg_results_df <- as.data.frame(kegg_res)
+
+  if (nrow(kegg_results_df) > 0) {
+    output_filename <- paste0("../KEGGS_results/After_filtering/", file_identifier, "_KEGG_results.csv")
+    write.csv(kegg_results_df, file = output_filename, row.names = FALSE)
+
+    # --- Visualize top pathways (only if results exist) ---
+    # 5a. Barplot
+    keggBarPlot <- barplot(kegg_res, showCategory=20, title=paste("Top KEGG pathways", file_identifier, sep = " " ))
+    png(file = paste("../UCI_Diff_Exp_plots/After_filtering/", file_identifier, "KEGGS_PW_BP.png"), width = 10, height = 10, units = "in", res = 300)
+    print(keggBarPlot)
+    dev.off()
+
+    # 5b. Dotplot
+    keggdotplot <- dotplot(kegg_res, showCategory=20) + ggtitle(paste("Top KEGG pathways", file_identifier, sep = " " ))
+    png(file = paste("../UCI_Diff_Exp_plots/After_filtering/", file_identifier, "KEGGS_PW_DP.png"), width = 10, height = 10, units = "in", res = 300)
+    print(keggdotplot)
+    dev.off()
+  } else {
+    cat("No significant KEGG pathways found for:", sgv, "\n")
+  }
+}
+
+```
+
+# Setting up Org data base for GO enrichment analysis
+
+For this step we need to first create an orgDb
+
+```{r orgDbCreation, results='hide', include=FALSE}
+
+# Before running GSEA taking a look at keytypes in org.db
+keytypes(org.Astephensi.eg.db)
+
+# Set the org.db
+orgdb <- org.Astephensi.eg.db
+
+# Pull GO annotations (direct only) and keep BP
+ann <- AnnotationDbi::select(
+  orgdb,
+  keys = keys(orgdb, keytype = "GID"), # or whatever ID you want to use
+  columns = c("GO","ONTOLOGY"),
+  keytype = "GID"
+)
+ann <- ann[!is.na(ann$GO), c("GO","GID")] # Removed filter for only Biological processes -  & ann$ONTOLOGY == "BP"
+colnames(ann) <- c("term", "gene")  # TERM2GENE
+
+# 2) Optional TERM2NAME (GO term names)
+term_names <- AnnotationDbi::select(GO.db, keys = unique(ann$term),
+                                    columns = "TERM", keytype = "GOID")
+colnames(term_names) <- c("term","name")  # TERM2NAME
+
+
+```
+
+Then we can run the GO enrichment analysis
+
+```{r goEnrichment, include=FALSE, results='hide'}
+
+# Loop through each comparison result (e.g., "SetA_vs_SetB")
+for (comparison_name in names(comparison_results)) {
+  
+  cat("--- Starting analysis for:", comparison_name, "---\n")
+  
+  # Define the specific gene set we are interested in for this analysis
+  gene_set <- "in_set1_only"
+  
+  # 2a. Extract the list of significant gene IDs correctly
+  sigGeneIDs <- comparison_results[[comparison_name]][[gene_set]]
+  
+  # 2b. Check if there are any genes to analyze and skip if not
+  if (length(sigGeneIDs) == 0 || all(is.na(sigGeneIDs))) {
+    cat("  Skipping '", gene_set, "' - No genes in this set for this comparison.\n", sep="")
+    next # Skips to the next comparison_name
+  }
+  
+  cat("  Analyzing '", gene_set, "' with ", length(sigGeneIDs), " genes...\n", sep="")
+  
+  # 2c. Perform the GO enrichment using the 'enricher' function
+  # The 'universe' argument has been removed to use the default settings.
+  enricher_res <- enricher(
+    gene          = sigGeneIDs,
+    TERM2GENE     = ann,
+    TERM2NAME     = term_names,
+    pAdjustMethod = "BH",
+    pvalueCutoff  = 0.05,
+    qvalueCutoff  = 0.05,
+    minGSSize     = 10,
+    maxGSSize     = 500
+  )
+  
+  # 2d. Save results, but only if enrichment was found
+  enrichment_df <- as.data.frame(enricher_res)
+  
+  if (nrow(enrichment_df) > 0) {
+    
+    # Create a clean and descriptive identifier for the output files
+    file_identifier <- comparison_name
+    
+    # Save the results table
+    output_csv <- paste0("../GOenrichment_results/After_filtering/", file_identifier, ".csv")
+    write.csv(enrichment_df, file = output_csv, row.names = FALSE)
+    
+    # Save the dotplot visualization
+    output_dotplot <- paste0("../UCI_Diff_Exp_plots/After_filtering/", file_identifier, "_GO_dotplot.png")
+    png(file = output_dotplot, width = 10, height = 10, units = "in", res = 300)
+    print(dotplot(enricher_res, showCategory = 20) + ggtitle(paste("GO Enrichment for", file_identifier)))
+    dev.off()
+    
+    # Save the barplot visualization
+    output_barplot <- paste0("../UCI_Diff_Exp_plots/After_filtering/", file_identifier, "_GO_barplot.png")
+    png(file = output_barplot, width = 10, height = 10, units = "in", res = 300)
+    print(barplot(enricher_res, showCategory = 20) + ggtitle(paste("GO Enrichment for", file_identifier)))
+    dev.off()
+    
+    cat("    -> Found significant terms. Saved results and plots.\n")
+    
+  } else {
+    cat("    -> No significant GO terms found for this set.\n")
+  }
+} # End of loop
+
+cat("\n--- GO enrichment analysis complete. ---\n")
+
+
+
+```
+
+
+
 
 
 
